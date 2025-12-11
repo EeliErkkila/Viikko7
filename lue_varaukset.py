@@ -1,3 +1,5 @@
+#Käytän koodissa sanakirjoja dict, se on helpompi ymmärtää koodissa, koska kaikki
+#indeksi viittaulset on korvattu avainsanoilla jotka ovat selkeämpiä.
 from datetime import datetime
 
 # Muuntaa varausrivin listasta sanakirjaksi
