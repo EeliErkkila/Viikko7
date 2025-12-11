@@ -1,7 +1,6 @@
+from datetime import datetime
 #Käytän koodissa sanakirjoja dict, se on helpompi ymmärtää koodissa, koska kaikki
 #indeksi viittaulset on korvattu avainsanoilla jotka ovat selkeämpiä.
-from datetime import datetime
-
 # Muuntaa varausrivin listasta sanakirjaksi
 def muunna_varaustiedot(rivi: list) -> dict:
     jono = [item.strip() for item in rivi]
