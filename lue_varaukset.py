@@ -1,31 +1,39 @@
-# Copyright (c) 2025 Ville Heikkiniemi
-#
-# This code is licensed under the MIT License.
-# You are free to use, modify, and distribute this code,
-# provided that the original copyright notice is retained.
-#
-# See LICENSE file in the project root for full license information.
-
 from datetime import datetime
 
-def muunna_varaustiedot(varaus: list) -> list:
-    muutettu_varaus = []
-    muutettu_varaus.append(int(varaus[0]))
-    muutettu_varaus.append(varaus[1])
-    muutettu_varaus.append(varaus[2])
-    muutettu_varaus.append(varaus[3])
-    muutettu_varaus.append(datetime.strptime(varaus[4], "%Y-%m-%d").date())
-    muutettu_varaus.append(datetime.strptime(varaus[5], "%H:%M").time())
-    muutettu_varaus.append(int(varaus[6]))
-    muutettu_varaus.append(float(varaus[7]))
-    muutettu_varaus.append(varaus[8].lower() == "true")
-    muutettu_varaus.append(varaus[9])
-    muutettu_varaus.append(datetime.strptime(varaus[10], "%Y-%m-%d %H:%M:%S"))
-    return muutettu_varaus
+# Muuntaa varausrivin listasta sanakirjaksi
+def muunna_varaustiedot(rivi: list) -> dict:
+    jono = [item.strip() for item in rivi]
 
+    varaus_id = int(jono[0])
+    nimi = jono[1]
+    sahkoposti = jono[2]
+    puhelin = jono[3]
+    varauksen_pvm = datetime.strptime(jono[4], "%Y-%m-%d").date()
+    varauksen_klo = datetime.strptime(jono[5], "%H:%M").time()
+    varauksen_kesto = int(jono[6])
+    hinta = float(jono[7])
+    varaus_vahvistettu = (jono[8] == "True")
+    varattu_tila = jono[9]
+    varaus_luotu = datetime.strptime(jono[10], "%Y-%m-%d %H:%M:%S")
+
+    # Palautetaan sanakirja
+    return {
+        "varausId": varaus_id,
+        "nimi": nimi,
+        "sähköposti": sahkoposti,
+        "puhelin": puhelin,
+        "varauksenPvm": varauksen_pvm,
+        "varauksenKlo": varauksen_klo,
+        "varauksenKesto": varauksen_kesto,
+        "hinta": hinta,
+        "varausVahvistettu": varaus_vahvistettu,
+        "varattuTila": varattu_tila,
+        "varausLuotu": varaus_luotu,
+    }
+
+# Lukee varaukset tiedostosta
 def hae_varaukset(varaustiedosto: str) -> list:
     varaukset = []
-    varaukset.append(["varausId", "nimi", "sähköposti", "puhelin", "varauksenPvm", "varauksenKlo", "varauksenKesto", "hinta", "varausVahvistettu", "varattuTila", "varausLuotu"])
     with open(varaustiedosto, "r", encoding="utf-8") as f:
         for varaus in f:
             varaus = varaus.strip()
@@ -33,63 +41,64 @@ def hae_varaukset(varaustiedosto: str) -> list:
             varaukset.append(muunna_varaustiedot(varaustiedot))
     return varaukset
 
-def vahvistetut_varaukset(varaukset: list):
-    for varaus in varaukset[1:]:
-        if(varaus[8]):
-            print(f"- {varaus[1]}, {varaus[9]}, {varaus[4].strftime('%d.%m.%Y')} klo {varaus[5].strftime('%H.%M')}")
 
-    print()
-
-def pitkat_varaukset(varaukset: list):
-    for varaus in varaukset[1:]:
-        if(varaus[6] >= 3):
-            print(f"- {varaus[1]}, {varaus[4].strftime('%d.%m.%Y')} klo {varaus[5].strftime('%H.%M')}, kesto {varaus[6]} h, {varaus[9]}")
-
-    print()
-
-def varausten_vahvistusstatus(varaukset: list):
-    for varaus in varaukset[1:]:
-        if(varaus[8]):
-            print(f"{varaus[1]} → Vahvistettu")
-        else:
-            print(f"{varaus[1]} → EI vahvistettu")
-
-    print()
-
-def varausten_lkm(varaukset: list):
-    vahvistetutVaraukset = 0
-    eiVahvistetutVaraukset = 0
-    for varaus in varaukset[1:]:
-        if(varaus[8]):
-            vahvistetutVaraukset += 1
-        else:
-            eiVahvistetutVaraukset += 1
-
-    print(f"- Vahvistettuja varauksia: {vahvistetutVaraukset} kpl")
-    print(f"- Ei-vahvistettuja varauksia: {eiVahvistetutVaraukset} kpl")
-    print()
-
-def varausten_kokonaistulot(varaukset: list):
-    varaustenTulot = 0
-    for varaus in varaukset[1:]:
-        if(varaus[8]):
-            varaustenTulot += varaus[6]*varaus[7]
-
-    print("Vahvistettujen varausten kokonaistulot:", f"{varaustenTulot:.2f}".replace('.', ','), "€")
-    print()
-
+# Pääohjelma
 def main():
-    varaukset = hae_varaukset("varaukset.txt")
+    varausdata = hae_varaukset("varaukset.txt")
+    # Tulostetaan vahvistetut varaukset
     print("1) Vahvistetut varaukset")
-    vahvistetut_varaukset(varaukset)
-    print("2) Pitkät varaukset (≥ 3 h)")
-    pitkat_varaukset(varaukset)
+    for merkinta in varausdata:
+        if merkinta["varausVahvistettu"] is True:
+            print(
+                f'- {merkinta["nimi"]}, {merkinta["varattuTila"]}, '
+                f'{merkinta["varauksenPvm"].strftime("%d.%m.%Y")}, '
+                f'klo {merkinta["varauksenKlo"].strftime("%H.%M")}'
+            )
+    print()
+    # Tulostetaan pitkät varaukset
+    print("2) Pitkät varaukset (> 3 h)")
+    for merkinta in varausdata:
+        if merkinta["varauksenKesto"] >= 3:
+            print(
+                f'- {merkinta["nimi"]}, '
+                f'{merkinta["varauksenPvm"].strftime("%d.%m.%Y")} klo {merkinta["varauksenKlo"].strftime("%H.%M")}'
+                f' kesto {merkinta["varauksenKesto"]} h, {merkinta["varattuTila"]}'
+            )
+    print()
+    # Tulostetaan varausten vahvistusstatus
     print("3) Varausten vahvistusstatus")
-    varausten_vahvistusstatus(varaukset)
-    print("4) Yhteenveto vahvistuksista")
-    varausten_lkm(varaukset)
+    for merkinta in varausdata:
+        if merkinta["varausVahvistettu"]:
+            print(f'{merkinta["nimi"]} -> Vahvistettu')
+        else:
+            print(f'{merkinta["nimi"]} -> Ei vahvistettu')
+    print()
+    # Tulostetaan yhteenveto vahvistuksista
+    print("4) Yhteenveto Vahvistuksista")
+    tunnistetut = 0
+    tunnistamattomat = 0
+
+    for merkinta in varausdata:
+        if merkinta["varausVahvistettu"]:
+            tunnistetut += 1
+        else:
+            tunnistamattomat += 1
+
+    print(f'- Vahvistettuja varauksia: {tunnistetut} kpl')
+    print(f'- Ei-vahvistettuja varauksia: {tunnistamattomat} kpl')
+    print()
+    # Tulostetaan vahvistettujen varausten kokonaistulot
     print("5) Vahvistettujen varausten kokonaistulot")
-    varausten_kokonaistulot(varaukset)
+    summa_rahana = 0.0
+
+    for merkinta in varausdata:
+        if merkinta["varausVahvistettu"]:
+            yksikkohinta = merkinta["hinta"]
+            tunnit = merkinta["varauksenKesto"]
+            summa_rahana += yksikkohinta * tunnit
+
+    print(f'Vahvistettujen varausten kokonaistulot: {summa_rahana} €')
+
 
 if __name__ == "__main__":
     main()
